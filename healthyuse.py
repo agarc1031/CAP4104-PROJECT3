@@ -4,9 +4,11 @@ import json
 import os
 from datetime import datetime
 
+# Set up data path
 DATA_FILE = "data/responses.json"
 os.makedirs("data", exist_ok=True)
 
+# Save response to file
 def save_response(data):
     if os.path.exists(DATA_FILE):
         with open(DATA_FILE, "r") as f:
@@ -17,95 +19,110 @@ def save_response(data):
     with open(DATA_FILE, "w") as f:
         json.dump(responses, f, indent=4)
 
-# Initialize session state variables
-if 'task' not in st.session_state:
-    st.session_state.task = 0
+# Initialize session state
+if 'step' not in st.session_state:
+    st.session_state.step = 'consent'
 if 'responses' not in st.session_state:
     st.session_state.responses = {}
 
 st.title("Healthy Bites Usability Testing Tool")
 
-# Consent
-st.header("Consent Form")
-if st.checkbox("I agree to participate in this usability study."):
-    
-    # Demographic Information
-    st.subheader("Demographic Questionnaire")
-    st.session_state.responses['name'] = st.text_input("First Name", st.session_state.responses.get('name', ''))
-    st.session_state.responses['age'] = st.slider("Age", 18, 80, st.session_state.responses.get('age', 25))
+# Step: Consent
+if st.session_state.step == 'consent':
+    st.header("Consent Form")
+    if st.checkbox("I agree to participate in this usability study."):
+        st.session_state.step = 'demographics'
+        st.experimental_rerun()
+
+# Step: Demographics
+elif st.session_state.step == 'demographics':
+    st.subheader("Demographic Information")
+    st.session_state.responses['name'] = st.text_input("First Name")
+    st.session_state.responses['age'] = st.slider("Age", 18, 80, 25)
     st.session_state.responses['background'] = st.selectbox("Field of Work", 
-        ["Accounting", "Healthcare", "Education", "Retail", "Other"],
-        index=["Accounting", "Healthcare", "Education", "Retail", "Other"].index(st.session_state.responses.get('background', 'Accounting'))
-    )
+        ["Accounting", "Healthcare", "Education", "Retail", "Other"])
+    if st.button("Continue to Task 1"):
+        st.session_state.step = 'task1_start'
+        st.experimental_rerun()
 
-    # Task 1
-    if st.session_state.task == 0:
-        st.subheader("Task 1: Search for a food and view gut health rating")
-        if st.button("Start Task 1"):
-            st.session_state.task1_start = time.time()
-            st.session_state.task = 1
+# Step: Task 1 Start
+elif st.session_state.step == 'task1_start':
+    st.subheader("Task 1: Search for a food and view gut health rating")
+    if st.button("Start Task 1"):
+        st.session_state.task1_start = time.time()
+        st.session_state.step = 'task1'
+        st.experimental_rerun()
 
-    if st.session_state.task == 1:
-        st.success("Imagine you searched for 'banana' and viewed its gut rating.")
-        task1_success = st.radio("Did you complete this task?", ["Yes", "No"], key="t1s")
-        task1_difficulty = st.slider("Rate task difficulty (1 = easy, 5 = hard)", 1, 5, key="t1d")
-        if st.button("Next to Task 2"):
-            st.session_state.responses["task1"] = {
-                "success": task1_success,
-                "difficulty": task1_difficulty,
-                "time": round(time.time() - st.session_state.task1_start, 2)
-            }
-            st.session_state.task = 2
+# Step: Task 1
+elif st.session_state.step == 'task1':
+    st.success("Imagine you searched for 'banana' and viewed its gut rating.")
+    success = st.radio("Did you complete this task?", ["Yes", "No"])
+    difficulty = st.slider("Rate difficulty (1 = easy, 5 = hard)", 1, 5)
+    if st.button("Continue to Task 2"):
+        st.session_state.responses['task1'] = {
+            'success': success,
+            'difficulty': difficulty,
+            'time': round(time.time() - st.session_state.task1_start, 2)
+        }
+        st.session_state.step = 'task2_start'
+        st.experimental_rerun()
 
-    # Task 2
-    if st.session_state.task == 2:
-        st.subheader("Task 2: Interpret nutritional chart")
-        if st.button("Start Task 2"):
-            st.session_state.task2_start = time.time()
-            st.session_state.task = 3
+# Step: Task 2 Start
+elif st.session_state.step == 'task2_start':
+    st.subheader("Task 2: Interpret nutritional chart")
+    if st.button("Start Task 2"):
+        st.session_state.task2_start = time.time()
+        st.session_state.step = 'task2'
+        st.experimental_rerun()
 
-    if st.session_state.task == 3:
-        st.success("Imagine you interpreted a pie chart about fiber and sugar.")
-        task2_success = st.radio("Did you complete this task?", ["Yes", "No"], key="t2s")
-        task2_difficulty = st.slider("Rate task difficulty (1 = easy, 5 = hard)", 1, 5, key="t2d")
-        if st.button("Next to Task 3"):
-            st.session_state.responses["task2"] = {
-                "success": task2_success,
-                "difficulty": task2_difficulty,
-                "time": round(time.time() - st.session_state.task2_start, 2)
-            }
-            st.session_state.task = 4
+# Step: Task 2
+elif st.session_state.step == 'task2':
+    st.success("Imagine you interpreted a pie chart about fiber and sugar.")
+    success = st.radio("Did you complete this task?", ["Yes", "No"])
+    difficulty = st.slider("Rate difficulty (1 = easy, 5 = hard)", 1, 5)
+    if st.button("Continue to Task 3"):
+        st.session_state.responses['task2'] = {
+            'success': success,
+            'difficulty': difficulty,
+            'time': round(time.time() - st.session_state.task2_start, 2)
+        }
+        st.session_state.step = 'task3_start'
+        st.experimental_rerun()
 
-    # Task 3
-    if st.session_state.task == 4:
-        st.subheader("Task 3: Submit feedback through the app")
-        if st.button("Start Task 3"):
-            st.session_state.task3_start = time.time()
-            st.session_state.task = 5
+# Step: Task 3 Start
+elif st.session_state.step == 'task3_start':
+    st.subheader("Task 3: Submit feedback through the app")
+    if st.button("Start Task 3"):
+        st.session_state.task3_start = time.time()
+        st.session_state.step = 'task3'
+        st.experimental_rerun()
 
-    if st.session_state.task == 5:
-        st.success("Imagine you typed a comment and clicked submit.")
-        task3_success = st.radio("Did you complete this task?", ["Yes", "No"], key="t3s")
-        task3_difficulty = st.slider("Rate task difficulty (1 = easy, 5 = hard)", 1, 5, key="t3d")
-        if st.button("Finish Test"):
-            st.session_state.responses["task3"] = {
-                "success": task3_success,
-                "difficulty": task3_difficulty,
-                "time": round(time.time() - st.session_state.task3_start, 2)
-            }
-            st.session_state.task = 6
+# Step: Task 3
+elif st.session_state.step == 'task3':
+    st.success("Imagine you typed a comment and clicked submit.")
+    success = st.radio("Did you complete this task?", ["Yes", "No"])
+    difficulty = st.slider("Rate difficulty (1 = easy, 5 = hard)", 1, 5)
+    if st.button("Finish"):
+        st.session_state.responses['task3'] = {
+            'success': success,
+            'difficulty': difficulty,
+            'time': round(time.time() - st.session_state.task3_start, 2)
+        }
+        st.session_state.step = 'feedback'
+        st.experimental_rerun()
 
-    # Feedback and save
-    if st.session_state.task == 6:
-        st.subheader("Exit Feedback")
-        feedback = st.text_area("Any final comments about your experience?")
-        st.session_state.responses["feedback"] = feedback
-        st.session_state.responses["timestamp"] = datetime.now().isoformat()
+# Step: Feedback
+elif st.session_state.step == 'feedback':
+    st.subheader("Final Feedback")
+    feedback = st.text_area("Any final comments?")
+    st.session_state.responses['feedback'] = feedback
+    st.session_state.responses['timestamp'] = datetime.now().isoformat()
 
-        save_response(st.session_state.responses)
-        st.success("Thank you! Your responses were saved.")
-        st.session_state.task = 7
+    save_response(st.session_state.responses)
+    st.success("Thank you! Your data has been saved.")
+    st.balloons()
+    st.session_state.step = 'done'
 
-    if st.session_state.task == 7:
-        st.balloons()
-        st.write("You may now close this window or refresh to start a new session.")
+# Step: Done
+elif st.session_state.step == 'done':
+    st.write("Test complete. You may close the browser or refresh to start again.")
